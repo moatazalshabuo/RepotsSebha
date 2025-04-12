@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}قائمة الإعلانات{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} text-right">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">الإعلانات</h5>
+      <a href="{% url 'add_ad' %}" class="btn btn-primary">إضافة إعلان</a>
+    </div>
+    <div class="card-body px-0 pt-0 pb-2">
+      <div class="table-responsive p-3">
+        <table class="table align-items-center mb-0">
+          <thead>
+            <tr>
+              <th></th>
+              <th>العنوان</th>
+              <th>النوع</th>
+              <th>الناشر</th>
+              <th>تاريخ الإضافة</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ad in ads %}
+            <tr>
+              <td>
+                <img src='{{ ad.image.url }}' width=70 height=70>
+              </td>
+              <td>{{ ad.title }}</td>
+              <td>{{ ad.get_type_ads_display }}</td>
+              <td>{{ ad.publisher.username }}</td>
+              <td>{{ ad.created_at|date:"Y-m-d H:i" }}</td>
+              <td>
+                <a href="{% url 'edit_ad' ad.id %}" class="btn btn-sm btn-warning">تعديل</a>
+                <a href="{% url 'delete_ad' ad.id %}" class="btn btn-sm btn-danger">حذف</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">لا توجد إعلانات</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

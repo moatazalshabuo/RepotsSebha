@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- العنوان -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body text-end">
+          <h5 class="font-weight-bolder mb-0">لوحة تحكم الجهة: {{ request.user.get_type_display }}</h5>
+          <p class="text-sm text-muted">مرحبًا {{ request.user.get_full_name }}، هذه لمحة عن نشاط البلاغات الخاصة بجهتك.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row">
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card">
+        <div class="card-body p-3">
+          <div class="row">
+            <div class="col-8">
+              <div class="numbers">
+                <p class="text-sm mb-0 text-capitalize font-weight-bold">إجمالي البلاغات</p>
+                <h5 class="font-weight-bolder mb-0">{{ total_reports }}</h5>
+              </div>
+            </div>
+            <div class="col-4 text-start">
+              <div class="icon icon-shape bg-gradient-primary shadow text-center border-radius-md">
+                <i class="ni ni-send text-lg opacity-10" aria-hidden="true"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card">
+        <div class="card-body p-3">
+          <div class="row">
+            <div class="col-8">
+              <div class="numbers">
+                <p class="text-sm mb-0 text-capitalize font-weight-bold">قيد المعالجة</p>
+                <h5 class="font-weight-bolder mb-0">{{ in_progress }}</h5>
+              </div>
+            </div>
+            <div class="col-4 text-start">
+              <div class="icon icon-shape bg-gradient-warning shadow text-center border-radius-md">
+                <i class="ni ni-time-alarm text-lg opacity-10" aria-hidden="true"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 col-md-6 mb-4">
+      <div class="card">
+        <div class="card-body p-3">
+          <div class="row">
+            <div class="col-8">
+              <div class="numbers">
+                <p class="text-sm mb-0 text-capitalize font-weight-bold">تم الحل</p>
+                <h5 class="font-weight-bolder mb-0">{{ resolved_reports }}</h5>
+              </div>
+            </div>
+            <div class="col-4 text-start">
+              <div class="icon icon-shape bg-gradient-success shadow text-center border-radius-md">
+                <i class="ni ni-check-bold text-lg opacity-10" aria-hidden="true"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- خريطة حرارية -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header pb-0">
+          <h6>الخريطة الحرارية لأماكن البلاغات</h6>
+        </div>
+        <div class="card-body p-0">
+          <div id="heatmap" style="height: 500px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- جدول البلاغات الخاصة -->
+  <div class="card">
+    <div class="card-header pb-0">
+      <h6>آخر البلاغات التابعة للجهة</h6>
+    </div>
+    <div class="card-body px-0">
+      <div class="table-responsive">
+        <table class="table text-end">
+          <thead>
+            <tr>
+              <th>رقم البلاغ</th>
+              <th>النوع</th>
+              <th>الحالة</th>
+              <th>التاريخ</th>
+              <th>تفاصيل</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report in recent_reports %}
+            <tr>
+              <td>#{{ report.id }}</td>
+              <td>{{ report.get_type_display }}</td>
+              <td><span class="badge bg-{{ report.status|yesno:'warning,info,success' }}">{{ report.get_status_display }}</span></td>
+              <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+              <td><a href="{% url 'report_detail' report.id %}" class="btn btn-sm btn-outline-dark">عرض</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">لا توجد بلاغات حالياً</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet + Heatmap plugin -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const map = L.map('heatmap').setView([27.0377, 14.4283], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const heatData = [
+      {% for report in recent_reports %}
+        [{{ report.lat }}, {{ report.lng }}],
+      {% endfor %}
+    ];
+
+    L.heatLayer(heatData, { radius: 25 }).addTo(map);
+  });
+</script>
+{% endblock %}
+

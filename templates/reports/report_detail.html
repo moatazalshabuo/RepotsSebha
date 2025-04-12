@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block style %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+{% endblock style %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+
+      <div class="card mb-4">
+        <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+            
+          <h6 class="mb-0">تفاصيل البلاغ - {{ report.get_type_display }}</h6>
+        <div>
+          <a href="{% url 'report_list' %}" class="btn btn-sm btn-outline-secondary">رجوع</a>
+          <form method="post" action="{% url 'update_report_status' report.id 1 %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-info me-2">قيد المعالجة</button>
+          </form>
+          
+          <form method="post" action="{% url 'update_report_status' report.id 2 %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-success">تم الحل</button>
+          </form>
+        </div>
+        </div>
+        <div class="card-body">
+          
+          <!-- الحالة -->
+          <div class="mb-3">
+            <strong>الحالة:</strong>
+            {% if report.status == 0 %}
+              <span class="badge bg-gradient-warning">جديد</span>
+            {% elif report.status == 1 %}
+              <span class="badge bg-gradient-info">قيد التنفيذ</span>
+            {% else %}
+              <span class="badge bg-gradient-success">تم الحل</span>
+            {% endif %}
+          </div>
+
+          <!-- التفاصيل -->
+          <table class="table table-bordered text-end">
+            <tr>
+              <th>نوع البلاغ</th>
+              <td>{{ report.get_type_display }}</td>
+            </tr>
+            <tr>
+              <th>تفاصيل البلاغ</th>
+              <td>{{ report.details|default:"-" }}</td>
+            </tr>
+            <tr>
+              <th>خط العرض</th>
+              <td>{{ report.lat }}</td>
+            </tr>
+            <tr>
+              <th>خط الطول</th>
+              <td>{{ report.lng }}</td>
+            </tr>
+            <tr>
+              <th>تاريخ الإنشاء</th>
+              <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+          </table>
+
+          <!-- الخريطة -->
+          <h6 class="mt-4">موقع البلاغ:</h6>
+          <div id="map" style="height: 350px;" class="rounded shadow mb-4"></div>
+
+          <!-- المرفقات -->
+          <h6>المرفقات:</h6>
+          <div class="d-flex flex-wrap gap-3">
+            {% for attachment in report.attechment_set.all %}
+              <a href="{{ attachment.file.url }}" target="_blank">
+                {% comment %} {% if attachment.file.url|lower|endswith:'.jpg' or attachment.file.url|lower|endswith:'.png' %} {% endcomment %}
+                  <img src="{{ attachment.file.url }}" alt="مرفق" style="width: 120px; height: 120px; object-fit: cover;" class="rounded shadow-sm">
+                {% comment %} {% else %} {% endcomment %}
+                  {% comment %} <span class="badge bg-secondary">{{ attachment.file.name }}</span> {% endcomment %}
+                {% comment %} {% endif %} {% endcomment %}
+              </a>
+            {% empty %}
+              <p class="text-muted">لا توجد مرفقات.</p>
+            {% endfor %}
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+
+{% comment %} <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"></script> {% endcomment %}
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var lat = parseFloat("{{ report.lat }}");
+      var lng = parseFloat("{{ report.lng }}");
+  
+      // إعداد الخريطة
+      var map = L.map("map").setView([lat, lng], 15);
+  
+      // طبقة الخلفية من OpenStreetMap
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
+      }).addTo(map);
+  
+      // دائرة شفافة حمراء
+      L.circle([lat, lng], {
+        color: 'red',
+        fillColor: 'red',
+        fillOpacity: 0.2,
+        radius: 100 // نصف قطر الدائرة بالأمتار
+      }).addTo(map);
+  
+      // أيقونة مخصصة باللون الأحمر
+      var redIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/484/484167.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -32]
+      });
+  
+      // المؤشر الأحمر
+      L.marker([lat, lng], { icon: redIcon })
+        .addTo(map)
+        .bindPopup("{{ report.get_type_display }}")
+        .openPopup();
+    });
+  </script>
+  
+{% endblock scripts %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <!-- قائمة الحالات (3) -->
+    <div class="col-md-3">
+      <div class="card shadow">
+        <div class="card-header pb-0">
+          <h6>البلاغات الأخيرة</h6>
+        </div>
+        <div class="card-body overflow-auto" style="max-height: 85vh;">
+          <ul id="report-list" class="list-group list-group-flush"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- الخريطة (9) -->
+    <div class="col-md-9">
+      <div class="card shadow">
+        <div class="card-body p-0">
+          <div id="map" style="height: 85vh;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal تفاصيل البلاغ -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content text-end">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reportModalLabel">تفاصيل البلاغ</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modal-body-content">
+        <p><strong>النوع:</strong> <span id="modal-type"></span></p>
+        <p><strong>الحالة:</strong> <span id="modal-status"></span></p>
+        <p><strong>التفاصيل:</strong> <span id="modal-details"></span></p>
+        <p><strong>التاريخ:</strong> <span id="modal-created"></span></p>
+        <div id="modal-attachments" class="d-flex flex-wrap gap-2 mt-3"></div>
+      </div>
+      <div class="modal-footer">
+        <a id="view-report-link" href="#" class="btn btn-info">عرض</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- سكريبت الخريطة -->
+<script>
+  let map = L.map('map').setView([27.0377, 14.4283], 13); // موقع افتراضي
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  let markers = [];
+  let lastUpdate = null;
+  let renderedReports = new Set(); 
+  
+  // لتتبع المعرّفات المعروضة
+  function fetchReports() {
+    let url = '{% url "reports_api" %}';
+    if (lastUpdate) {
+      url += `?last_update=${encodeURIComponent(lastUpdate)}`;
+    }
+  
+    fetch(url)
+      .then(res => res.json())
+      .then(reports => {
+        if (reports.length > 0) {
+          lastUpdate = reports[reports.length - 1].created_at;
+  
+          reports.forEach(report => {
+            if (!renderedReports.has(report.id)) {
+              renderedReports.add(report.id);      // نضيف الـ ID إلى المتعقبات
+              addMarker(report);
+              prependToList(report);
+            }
+          });
+        }
+      });
+  }
+  
+
+  function addMarker(report) {
+    const marker = L.marker([report.lat, report.lng])
+      .addTo(map)
+      .on('click', () => showModal(report));
+    markers.push(marker);
+  }
+
+  function prependToList(report) {
+    const list = document.getElementById('report-list');
+    const item = document.createElement('li');
+    item.className = 'list-group-item list-group-item-action';
+    item.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <strong>${report.type}</strong><br>
+          <small class="text-muted">${formatDate(report.created_at)}</small>
+        </div>
+        <span class="badge bg-${getStatusColor(report.status)}">${getStatusText(report.status)}</span>
+      </div>`;
+    item.addEventListener('click', () => {
+      map.setView([report.lat, report.lng], 15);
+      showModal(report);
+    });
+    list.prepend(item);
+  }
+
+  function showModal(report) {
+    document.getElementById('modal-type').innerText = report.type;
+    document.getElementById('modal-status').innerText = getStatusText(report.status);
+    document.getElementById('modal-details').innerText = report.details || '-';
+    document.getElementById('modal-created').innerText = formatDate(report.created_at);
+    document.getElementById('view-report-link').href = `/reports/${report.id}/`;
+
+    const attachmentsDiv = document.getElementById('modal-attachments');
+    attachmentsDiv.innerHTML = '';
+    if (report.attechments && report.attechments.length > 0) {
+      report.attechments.forEach(att => {
+        if (att.file.endsWith('.jpg') || att.file.endsWith('.png')) {
+          attachmentsDiv.innerHTML += `<img src="${att.file}" style="width: 100px; height: 100px; object-fit: cover;" class="rounded shadow-sm">`;
+        } else {
+          attachmentsDiv.innerHTML += `<a href="${att.file}" target="_blank" class="badge bg-secondary">${att.file.split('/').pop()}</a>`;
+        }
+      });
+    }
+
+    new bootstrap.Modal(document.getElementById('reportModal')).show();
+  }
+
+  function getStatusText(status) {
+    return ['جديد', 'قيد التنفيذ', 'تم الحل'][status] || 'غير معروف';
+  }
+
+  function getStatusColor(status) {
+    return ['warning', 'info', 'success'][status] || 'secondary';
+  }
+
+  function formatDate(datetimeStr) {
+    const date = new Date(datetimeStr);
+    return date.toLocaleString('en', { hour12: false });
+  }
+
+  fetchReports();
+  setInterval(fetchReports, 15000);
+</script>
+
+{% endblock %}
