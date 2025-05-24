@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titlePage %}قائمة مراكز الطوارئ{% endblock %}
+
+{% block styles %}
+<style>
+  .table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+  }
+  
+  .center-card {
+    transition: all 0.3s ease;
+    height: 100%;
+  }
+  
+  .center-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .center-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  
+  .center-type-health { background-color: #4e73df; }
+  .center-type-security { background-color: #1cc88a; }
+  .center-type-fire { background-color: #e74a3b; }
+  .center-type-rescue { background-color: #f6c23e; }
+  .center-type-other { background-color: #858796; }
+  
+  .action-buttons .btn {
+    transition: all 0.3s;
+  }
+  
+  .action-buttons .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .location-badge {
+    font-family: 'Courier New', monospace;
+    background-color: #f8f9fa;
+    color: #495057;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 12px;
+    display: inline-block;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- بطاقة المعلومات العلوية -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card border-0 shadow-sm rounded-3 h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="rounded-circle bg-primary p-3 me-3">
+            <i class="bi bi-building-fill text-white fs-4"></i>
+          </div>
+          <div>
+            <h6 class="text-muted mb-1">إجمالي المراكز</h6>
+            <h3 class="mb-0">{{ centers|length }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+      <h5 class="mb-0 fw-bold">
+        <i class="bi bi-building-fill me-2 text-primary"></i>قائمة مراكز الطوارئ
+      </h5>
+      <a href="{% url 'create_emergency_center' %}" class="btn btn-primary rounded-pill px-4">
+        <i class="bi bi-building-fill-add me-2"></i>إضافة مركز
+      </a>
+    </div>
+
+    <!-- صف البحث والفلاتر (اختياري) -->
+    {% comment %} <div class="card-body pt-3 pb-0">
+      <div class="bg-light p-3 rounded-3">
+        <form class="row g-3" id="filterForm">
+          <div class="col-md-4">
+            <div class="position-relative">
+              <i class="bi bi-search position-absolute" style="left: 12px; top: 10px; color: #aaa;"></i>
+              <input type="text" class="form-control" id="centerSearch" placeholder="بحث عن مركز..." style="padding-left: 35px;">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <select class="form-select" id="typeFilter">
+              <option value="all">جميع الأنواع</option>
+              <option value="health">صحي</option>
+              <option value="security">أمني</option>
+              <option value="fire">إطفاء</option>
+              <option value="rescue">إنقاذ</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <button type="button" class="btn btn-outline-secondary" id="resetFilters">
+              <i class="bi bi-arrow-repeat me-1"></i>إعادة ضبط
+            </button>
+          </div>
+        </form>
+      </div>
+    </div> {% endcomment %}
+
+    {% comment %} <!-- عرض البطاقات للشاشات الصغيرة -->
+    <div class="card-body d-md-none">
+      {% if centers %}
+        <div class="row">
+          {% for center in centers %}
+          <div class="col-12 mb-3 center-item" data-type="{{ center.user_account.type }}">
+            <div class="card center-card border-0 shadow-sm">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="center-icon center-type-{{ center.user_account.type }}">
+                    {% if center.user_account.type == 'health' %}
+                      <i class="bi bi-hospital-fill text-white"></i>
+                    {% elif center.user_account.type == 'security' %}
+                      <i class="bi bi-shield-fill text-white"></i>
+                    {% elif center.user_account.type == 'fire' %}
+                      <i class="bi bi-fire text-white"></i>
+                    {% elif center.user_account.type == 'rescue' %}
+                      <i class="bi bi-life-preserver text-white"></i>
+                    {% else %}
+                      <i class="bi bi-building-fill text-white"></i>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <h6 class="mb-0 fw-bold">{{ center.name }}</h6>
+                    <small class="text-muted">{{ center.user_account.get_type_display }}</small>
+                  </div>
+                </div>
+                
+                <div class="mb-2">
+                  <small class="text-muted d-block mb-1">الموقع:</small>
+                  <span class="location-badge">
+                    <i class="bi bi-geo-alt-fill text-danger"></i>
+                    {{ center.location_lat|default:"-" }}, {{ center.location_lng|default:"-" }}
+                  </span>
+                </div>
+                
+                <div class="mb-2">
+                  <small class="text-muted d-block mb-1">اسم المستخدم:</small>
+                  <span>{{ center.user_account.username }}</span>
+                </div>
+                
+                <div>
+                  <small class="text-muted d-block mb-1">المشرف:</small>
+                  <span>{{ center.admin.username|default:"غير محدد" }}</span>
+                </div>
+                
+                <div class="mt-3 text-end">
+                  <a href="#" class="btn btn-sm btn-outline-primary rounded-pill">
+                    <i class="bi bi-pencil-fill"></i> تعديل
+                  </a>
+                  <a href="#" class="btn btn-sm btn-outline-danger rounded-pill ms-1">
+                    <i class="bi bi-trash-fill"></i> حذف
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <img src="{% static 'img/empty.svg' %}" alt="لا توجد مراكز" style="width: 150px; opacity: 0.5;">
+          <p class="mt-3 text-muted">لا توجد مراكز طوارئ مسجلة حتى الآن</p>
+          <a href="{% url 'create_emergency_center' %}" class="btn btn-primary btn-sm mt-2">
+            <i class="bi bi-building-fill-add me-1"></i> إضافة مركز الآن
+          </a>
+        </div>
+      {% endif %}
+    </div> {% endcomment %}
+
+    <!-- عرض الجدول للشاشات المتوسطة والكبيرة -->
+    <div class="card-body d-none d-md-block">
+      {% if centers %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="bg-light">
+              <tr>
+                <th class="border-top-0" width="50">#</th>
+                <th class="border-top-0">اسم المركز</th>
+                <th class="border-top-0">النوع</th>
+                <th class="border-top-0">الموقع</th>
+                <th class="border-top-0">اسم المستخدم</th>
+                <th class="border-top-0">المشرف</th>
+                <th class="border-top-0" width="150">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for center in centers %}
+              <tr class="center-item" data-type="{{ center.user_account.type }}">
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="center-icon center-type-{{ center.user_account.type }}">
+                      {% if center.user_account.type == 'health' %}
+                        <i class="bi bi-hospital-fill text-white"></i>
+                      {% elif center.user_account.type == 'security' %}
+                        <i class="bi bi-shield-fill text-white"></i>
+                      {% elif center.user_account.type == 'fire' %}
+                        <i class="bi bi-fire text-white"></i>
+                      {% elif center.user_account.type == 'rescue' %}
+                        <i class="bi bi-life-preserver text-white"></i>
+                      {% else %}
+                        <i class="bi bi-building-fill text-white"></i>
+                      {% endif %}
+                    </div>
+                    <span class="fw-bold">{{ center.name }}</span>
+                  </div>
+                </td>
+                <td>{{ center.user_account.get_type_display }}</td>
+                <td>
+                  <span class="location-badge">
+                    <i class="bi bi-geo-alt-fill text-danger"></i>
+                    {{ center.location_lat|default:"-" }}, {{ center.location_lng|default:"-" }}
+                  </span>
+                </td>
+                <td>{{ center.user_account.username }}</td>
+                <td>{{ center.admin.username|default:"غير محدد" }}</td>
+                <td class="action-buttons d-flex">
+                  <a href="{% url "edit_emergency_center" center.id %}" class="btn btn-sm btn-outline-primary rounded-pill">
+                    تعديل
+                  </a>
+              
+                    <form action="{% url 'delete_emergency_center' center.id %}" method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذا المركز؟');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill">
+                        <i class="bi bi-trash-fill me-2"></i> حذف المركز
+                        </button>
+                    </form>
+               
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <img src="{% static 'img/empty.svg' %}" alt="لا توجد مراكز" style="width: 150px; opacity: 0.5;">
+          <p class="mt-3 text-muted">لا توجد مراكز طوارئ مسجلة حتى الآن</p>
+          <a href="{% url 'create_emergency_center' %}" class="btn btn-primary btn-sm mt-2">
+            <i class="bi bi-building-fill-add me-1"></i> إضافة مركز الآن
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // عناصر DOM
+    const centerSearch = document.getElementById('centerSearch');
+    const typeFilter = document.getElementById('typeFilter');
+    const resetFilters = document.getElementById('resetFilters');
+    const centerItems = document.querySelectorAll('.center-item');
+    
+    // وظيفة البحث والفلترة
+    function filterCenters() {
+      const searchValue = centerSearch.value.toLowerCase();
+      const typeValue = typeFilter.value;
+      
+      centerItems.forEach(item => {
+        const centerName = item.querySelector('.fw-bold').textContent.toLowerCase();
+        const centerType = item.getAttribute('data-type');
+        
+        const matchesSearch = centerName.includes(searchValue);
+        let matchesType = true;
+        
+        if (typeValue !== 'all') {
+          matchesType = centerType === typeValue;
+        }
+        
+        if (matchesSearch && matchesType) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+    
+    // إضافة مستمعي الأحداث
+    centerSearch.addEventListener('input', filterCenters);
+    typeFilter.addEventListener('change', filterCenters);
+    resetFilters.addEventListener('click', function() {
+      centerSearch.value = '';
+      typeFilter.value = 'all';
+      filterCenters();
+    });
+  });
+</script>
+{% endblock %}
+{% endblock %}

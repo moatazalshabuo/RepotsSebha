@@ -77,18 +77,31 @@
   </div>
 
   <!-- خريطة حرارية -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header pb-0">
-          <h6>الخريطة الحرارية لأماكن البلاغات</h6>
-        </div>
-        <div class="card-body p-0">
-          <div id="heatmap" style="height: 500px;"></div>
-        </div>
+ <div class="row mb-4">
+  <!-- خريطة البلاغات -->
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header pb-0">
+        <h6>الخريطة الحرارية للبلاغات</h6>
+      </div>
+      <div class="card-body p-0">
+        <div id="heatmap" style="height: 400px;"></div>
       </div>
     </div>
   </div>
+
+  <!-- خريطة المراكز -->
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header pb-0">
+        <h6>مراكز الطوارئ التابعة</h6>
+      </div>
+      <div class="card-body p-0">
+        <div id="centers_map" style="height: 400px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- جدول البلاغات الخاصة -->
   <div class="card">
@@ -131,7 +144,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
-<script>
+{% comment %} <script>
   document.addEventListener("DOMContentLoaded", function () {
     const map = L.map('heatmap').setView([27.0377, 14.4283], 15);
 
@@ -146,6 +159,32 @@
     ];
 
     L.heatLayer(heatData, { radius: 25 }).addTo(map);
+  });
+</script> {% endcomment %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // خريطة البلاغات (Heatmap)
+    const heatmap = L.map('heatmap').setView([27.0377, 14.4283], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(heatmap);
+
+    const heatData = [
+      {% for report in recent_reports %}
+        [{{ report.lat }}, {{ report.lng }}],
+      {% endfor %}
+    ];
+    L.heatLayer(heatData, { radius: 25 }).addTo(heatmap);
+
+    // خريطة المراكز
+    const centerMap = L.map('centers_map').setView([27.0377, 14.4283], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(centerMap);
+
+   
+
+ {% for center in centers %}
+  L.marker([{{ center.location_lat }}, {{ center.location_lng }}])
+    .addTo(centerMap)
+    .bindPopup(`<b>{{ center.name }}</b><br>{{ center.icon }} {{ center.user_account.get_type_display }}`);
+{% endfor %}
   });
 </script>
 {% endblock %}

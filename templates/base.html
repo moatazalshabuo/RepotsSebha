@@ -8,7 +8,9 @@
   <link rel="apple-touch-icon" sizes="76x76" href="{% static 'assets/img/apple-icon.png'%}">
   <link rel="icon" type="image/png" href="{% static 'assets/img/favicon.png'%}">
   <title>
-    طوارئ سبها'
+    {% block titlePage %}
+    
+    {% endblock titlePage %}
   </title>
   <!--     Fonts and icons     -->
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet" />
@@ -24,8 +26,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.6.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   {% block style %}{% endblock style %}
   <style>
-    body {
-      font-family: 'Changa', sans-serif;
+    body *:not(i){
+      font-family: 'Changa', sans-serif !important;
     }
   </style>
 </head>
@@ -70,9 +72,7 @@
             <span class="nav-link-text me-1">عرض المستخدمين</span>
           </a>
         </li>
-      {% endif %}
-      
-      <!-- الإعلانات -->
+           <!-- الإعلانات -->
       <li class="nav-item">
         <a class="nav-link {% if request.resolver_match.url_name == 'ads_list' %}active{% endif %}" href="{% url 'ads_list' %}">
           <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center ms-2 d-flex align-items-center justify-content-center">
@@ -91,8 +91,7 @@
           <span class="nav-link-text me-1">إضافة إعلان</span>
         </a>
       </li>
-      
-      {% if not request.user.is_superuser %}
+       {% elif not request.user.user_type == 'emergency_admin' %}
         <!-- قائمة البلاغات -->
         <li class="nav-item">
           <a class="nav-link {% if request.resolver_match.url_name == 'report_list' %}active{% endif %}" href="{% url 'report_list' %}">
@@ -112,7 +111,55 @@
             <span class="nav-link-text me-1">خريطة البلاغات</span>
           </a>
         </li>
+        <!-- قائمة مراكز الطوارئ -->
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'center_list' %}active{% endif %}" href="{% url 'center_list' %}">
+          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center ms-2 d-flex align-items-center justify-content-center">
+            <i class="fas fa-hospital-alt text-dark"></i>
+          </div>
+          <span class="nav-link-text me-1">مراكز الطوارئ</span>
+        </a>
+      </li>
+         <!-- الإعلانات -->
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'ads_list' %}active{% endif %}" href="{% url 'ads_list' %}">
+          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center ms-2 d-flex align-items-center justify-content-center">
+            <i class="fas fa-bullhorn text-dark"></i>
+          </div>
+          <span class="nav-link-text me-1">الإعلانات</span>
+        </a>
+      </li>
+      
+      <!-- إضافة إعلان -->
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'add_ad' %}active{% endif %}" href="{% url 'add_ad' %}">
+          <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center ms-2 d-flex align-items-center justify-content-center">
+            <i class="fas fa-plus-circle text-dark"></i>
+          </div>
+          <span class="nav-link-text me-1">إضافة إعلان</span>
+        </a>
+      </li>
+
+      {% elif not request.user.user_type == 'emergency_center' %}
+        <!-- قائمة البلاغات -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'center_reports' %}active{% endif %}" href="{% url 'center_reports' %}">
+            <div class="icon icon-shape icon-sm shadow border-radius-md bg-white text-center ms-2 d-flex align-items-center justify-content-center">
+              <i class="fas fa-exclamation-circle text-dark"></i>
+            </div>
+            <span class="nav-link-text me-1">بلاغات المركز</span>
+          </a>
+        </li>
+      
+        <!-- خريطة البلاغات -->
+        
+
       {% endif %}
+      
+   
+      
+     
+      
       
       </ul>
     </div>

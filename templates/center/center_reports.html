@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titlePage %}بلاغات المركز{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold text-primary mb-0">
+        <i class="bi bi-clipboard-data-fill me-2"></i>بلاغات المركز
+      </h5>
+    </div>
+
+    <div class="card-body">
+      <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+          <input type="text" name="search" class="form-control rounded-pill" placeholder="بحث عن بلاغ..." value="{{ request.GET.search }}">
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-select rounded-pill">
+            <option value="">جميع الحالات</option>
+            <option value="0" {% if request.GET.status == '0' %}selected{% endif %}>جديد</option>
+            <option value="1" {% if request.GET.status == '1' %}selected{% endif %}>قيد التنفيذ</option>
+            <option value="2" {% if request.GET.status == '2' %}selected{% endif %}>تم الحل</option>
+            <option value="3" {% if request.GET.status == '3' %}selected{% endif %}>ملغي</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-outline-primary rounded-pill">
+            <i class="bi bi-funnel-fill me-1"></i>تصفية
+          </button>
+        </div>
+        <div class="col-md-2 d-grid">
+          <a href="?" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-repeat me-1"></i>إعادة تعيين
+          </a>
+        </div>
+      </form>
+
+      {% if reports %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>النوع</th>
+              <th>الحالة</th>
+              <th>التفاصيل</th>
+              <th>تاريخ البلاغ</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report in reports %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ report.get_type_display }}</td>
+              <td>
+                {% if report.status == 0 %}
+                  <span class="badge bg-secondary">جديد</span>
+                {% elif report.status == 1 %}
+                  <span class="badge bg-warning text-dark">قيد التنفيذ</span>
+                {% elif report.status == 2 %}
+                  <span class="badge bg-success">تم الحل</span>
+                {% elif report.status == 3 %}
+                  <span class="badge bg-danger">ملغي</span>
+                {% endif %}
+              </td>
+              <td>{{ report.details|truncatewords:10 }}</td>
+              <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+              <td>
+                <a href="{% url 'center_report_detail' report.id %}" class="btn btn-sm btn-outline-info rounded-pill">
+                  <i class="bi bi-eye"></i> عرض
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-center mt-4">
+        <nav>
+          <ul class="pagination pagination-sm">
+            {% if reports.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ reports.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in reports.paginator.page_range %}
+              <li class="page-item {% if reports.number == i %}active{% endif %}">
+                <a class="page-link" href="?page={{ i }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if reports.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ reports.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+
+      {% else %}
+      <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle-fill me-2"></i>لا توجد بلاغات حالياً للمركز.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

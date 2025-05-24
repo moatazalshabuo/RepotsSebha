@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}تعديل بيانات المركز{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h4 class="mb-4 text-center">تعديل بيانات مركز: {{ center.name }}</h4>
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <div class="row">
+      <div class="col-md-6">
+        <h5>بيانات الحساب</h5>
+        {{ user_form.as_p }}
+      </div>
+
+      <div class="col-md-6">
+        <h5>بيانات المركز</h5>
+        {{ center_form.as_p }}
+
+        <!-- زر لفتح الخريطة -->
+        <button type="button" class="btn btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#mapModal">
+          تحديد الموقع على الخريطة
+        </button>
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-success px-4">حفظ التعديلات</button>
+      <a href="{% url 'center_list' %}" class="btn btn-secondary px-4">إلغاء</a>
+    </div>
+  </form>
+</div>
+
+<!-- مودال الخريطة -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تحديد الموقع</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <div id="map" style="height: 400px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+        <button type="button" class="btn btn-primary" id="saveLocation">حفظ الإحداثيات</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet الخريطة -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const latitudeInput = document.getElementById('id_location_lat');
+    const longitudeInput = document.getElementById('id_location_lng');
+    const mapModal = document.getElementById('mapModal');
+    const saveBtn = document.getElementById('saveLocation');
+    let map, marker;
+
+    mapModal.addEventListener('shown.bs.modal', function () {
+      if (map) map.remove();
+
+      const lat = parseFloat(latitudeInput.value) || 32.8872;
+      const lng = parseFloat(longitudeInput.value) || 13.1913;
+
+      map = L.map('map').setView([lat, lng], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+      }).addTo(map);
+
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker.on('dragend', function (e) {
+        const pos = e.target.getLatLng();
+        latitudeInput.value = pos.lat.toFixed(6);
+        longitudeInput.value = pos.lng.toFixed(6);
+      });
+
+      map.on('click', function (e) {
+        marker.setLatLng(e.latlng);
+        latitudeInput.value = e.latlng.lat.toFixed(6);
+        longitudeInput.value = e.latlng.lng.toFixed(6);
+      });
+    });
+
+    saveBtn.addEventListener('click', function () {
+      bootstrap.Modal.getInstance(mapModal).hide();
+    });
+  });
+</script>
+{% endblock

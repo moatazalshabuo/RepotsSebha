@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titlePage %}تفاصيل البلاغ{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-gradient bg-primary text-white p-3">
+          <h4 class="mb-0">
+            <i class="bi bi-info-circle me-2"></i>تفاصيل البلاغ رقم #{{ report.id }}
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="row g-4 mb-4">
+            <div class="col-md-6">
+              <p><strong>نوع البلاغ:</strong> {{ report.get_type_display }}</p>
+              <p><strong>تفاصيل:</strong> {{ report.details|default:"لا توجد تفاصيل" }}</p>
+              <p><strong>الحالة:</strong>
+                {% if report.status == 0 %}<span class="badge bg-warning text-dark">جديد</span>{% endif %}
+                {% if report.status == 1 %}<span class="badge bg-info">قيد التنفيذ</span>{% endif %}
+                {% if report.status == 2 %}<span class="badge bg-success">تم الحل</span>{% endif %}
+                {% if report.status == 3 %}<span class="badge bg-secondary">ملغى</span>{% endif %}
+              </p>
+              <p><strong>تاريخ الإنشاء:</strong> {{ report.created_at|date:"Y-m-d H:i" }}</p>
+              {% if report.assigned_center %}
+              <p><strong>مركز الطوارئ المخصص:</strong> {{ report.assigned_center.name }}</p>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <div id="report-map" style="height: 300px; border-radius: 8px;"></div>
+              <p class="text-muted mt-2"><i class="bi bi-geo-alt-fill"></i> الموقع الجغرافي</p>
+              {% if report.assigned_center %}
+              <a id="navBtn" href="#" target="_blank" class="btn btn-outline-primary btn-sm mt-2">
+                <i class="bi bi-geo"></i> فتح في خرائط Google
+              </a>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if attachments %}
+          <div class="mb-4">
+            <h5><i class="bi bi-paperclip me-1"></i>المرفقات</h5>
+            <ul class="list-group">
+              {% for file in attachments %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <a href="{{ file.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                  <i class="bi bi-download"></i> تحميل
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          {% if report.status == 0 or report.status == 1 %}
+          <div class="text-center mt-4">
+            <form method="post" action="{% url 'center_update_report_status' report.id %}">
+              {% csrf_token %}
+              {% if report.status == 0 %}
+              <button name="new_status" value="1" class="btn btn-info px-4 rounded-pill">
+                <i class="bi bi-play-fill"></i> بدء التنفيذ
+              </button>
+              {% endif %}
+              {% if report.status == 1 %}
+              <button name="new_status" value="2" class="btn btn-success px-4 rounded-pill">
+                <i class="bi bi-check-circle"></i> تم الحل
+              </button>
+              {% endif %}
+            </form>
+          </div>
+          {% endif %}
+
+          <div class="mt-4 text-end">
+            <a href="{% url 'center_reports' %}" class="btn btn-outline-secondary rounded-pill">
+              <i class="bi bi-arrow-right-circle"></i> العودة إلى القائمة
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var lat = {{ report.lat }};
+    var lng = {{ report.lng }};
+    var map = L.map('report-map').setView([lat, lng], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    var reportMarker = L.marker([lat, lng]).addTo(map)
+      .bindPopup("بلاغ رقم #{{ report.id }}").openPopup();
+
+    {% if report.assigned_center %}
+    var centerLat = {{ report.assigned_center.location_lat }};
+    var centerLng = {{ report.assigned_center.location_lng }};
+    var centerMarker = L.marker([centerLat, centerLng], {
+      icon: L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor: [0, -30]
+      })
+    }).addTo(map).bindPopup("مركز الطوارئ: {{ report.assigned_center.name }}");
+
+    var route = L.polyline([
+      [lat, lng],
+      [centerLat, centerLng]
+    ], {
+      color: 'green',
+      weight: 4,
+      opacity: 0.7,
+      dashArray: '5, 8'
+    }).addTo(map);
+
+    map.fitBounds(route.getBounds());
+
+    // رابط خرائط Google
+    var gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${centerLat},${centerLng}&destination=${lat},${lng}`;
+    var navBtn = document.getElementById('navBtn');
+    if (navBtn) navBtn.href = gmapsUrl;
+    {% endif %}
+  });
+</script>
+{% endblock %}

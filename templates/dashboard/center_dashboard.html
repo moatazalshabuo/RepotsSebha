@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titlePage %}لوحة التحكم - مركز الطوارئ{% endblock %}
+
+{% block style %}
+<style>
+  .stats-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(0,0,0,0.05);
+  }
+  
+  .stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  }
+  
+  .stats-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 1rem;
+  }
+  
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+  
+  .map-container {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  
+  .quick-actions {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    margin-top: 2rem;
+  }
+  
+  .quick-actions::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+  }
+  
+  .quick-actions .btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    transition: all 0.3s ease;
+  }
+  
+  .quick-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    color: white;
+  }
+  
+  .report-item {
+    transition: background-color 0.2s ease;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .report-item:hover {
+    background-color: rgba(123, 97, 255, 0.05);
+  }
+  
+  .status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  
+  .leaflet-container {
+    font-family: 'Changa', sans-serif !important;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <!-- Stats Cards Row -->
+    <div class="row mb-4">
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card stats-card">
+          <div class="card-body p-3">
+            <div class="row">
+              <div class="col-8">
+                <div class="numbers">
+                  <p class="text-sm mb-0 text-capitalize font-weight-bold">إجمالي البلاغات</p>
+                  <h5 class="font-weight-bolder mb-0">
+                    {{ total_reports|default:0 }}
+                  </h5>
+                </div>
+              </div>
+              <div class="col-4 text-end">
+                <div class="icon icon-shape bg-gradient-primary shadow text-center border-radius-md">
+                  <i class="fas fa-exclamation-circle text-lg opacity-10" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card stats-card">
+          <div class="card-body p-3">
+            <div class="row">
+              <div class="col-8">
+                <div class="numbers">
+                  <p class="text-sm mb-0 text-capitalize font-weight-bold">قيد التنفيذ</p>
+                  <h5 class="font-weight-bolder mb-0">
+                    {{ in_progress|default:0 }}
+                    <span class="text-warning text-sm font-weight-bolder">نشط</span>
+                  </h5>
+                </div>
+              </div>
+              <div class="col-4 text-end">
+                <div class="icon icon-shape bg-gradient-warning shadow text-center border-radius-md">
+                  <i class="fas fa-clock text-lg opacity-10" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
+        <div class="card stats-card">
+          <div class="card-body p-3">
+            <div class="row">
+              <div class="col-8">
+                <div class="numbers">
+                  <p class="text-sm mb-0 text-capitalize font-weight-bold">تم الحل</p>
+                  <h5 class="font-weight-bolder mb-0">
+                    {{ resolved|default:0 }}
+                    <span class="text-success text-sm font-weight-bolder">مكتمل</span>
+                  </h5>
+                </div>
+              </div>
+              <div class="col-4 text-end">
+                <div class="icon icon-shape bg-gradient-success shadow text-center border-radius-md">
+                  <i class="fas fa-check-circle text-lg opacity-10" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-xl-3 col-sm-6">
+        <div class="card stats-card">
+          <div class="card-body p-3">
+            <div class="row">
+              <div class="col-8">
+                <div class="numbers">
+                  <p class="text-sm mb-0 text-capitalize font-weight-bold">متوسط الاستجابة</p>
+                  <h5 class="font-weight-bolder mb-0">
+                    4.2
+                    <span class="text-info text-sm font-weight-bolder">دقيقة</span>
+                  </h5>
+                </div>
+              </div>
+              <div class="col-4 text-end">
+                <div class="icon icon-shape bg-gradient-info shadow text-center border-radius-md">
+                  <i class="fas fa-stopwatch text-lg opacity-10" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+      <div class="col-lg-12 mb-lg-0 mb-4">
+        <div class="card">
+          <div class="card-header pb-0">
+            <div class="row">
+              <div class="col-lg-6 col-7">
+                <h6>الإحصائيات اليومية</h6>
+                <p class="text-sm mb-0">
+                  <i class="fa fa-check text-info" aria-hidden="true"></i>
+                  <span class="font-weight-bold ms-1">أكثر الأوقات التي تصل فيها البلاغات</span>
+                </p>
+              </div>
+              <div class="col-lg-6 col-5 my-auto text-end">
+                <div class="dropdown float-lg-end pe-4">
+                  <a class="cursor-pointer" id="dropdownTable" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v text-secondary"></i>
+                  </a>
+                  <ul class="dropdown-menu px-2 py-3 ms-sm-n4 ms-n5" aria-labelledby="dropdownTable">
+                    <li><a class="dropdown-item border-radius-md" href="#">تصدير PDF</a></li>
+                    <li><a class="dropdown-item border-radius-md" href="#">تصدير Excel</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <div class="chart-container">
+              <canvas id="reportChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> 
+     
+
+    <!-- Map and Reports Row -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header pb-0">
+            <div class="row">
+              <div class="col-lg-6 col-7">
+                <h6>خريطة البلاغات النشطة</h6>
+                <p class="text-sm mb-0">
+                  <i class="fa fa-map-marker-alt text-danger" aria-hidden="true"></i>
+                  <span class="font-weight-bold ms-1">{{ map_reports|length }} بلاغ نشط</span>
+                </p>
+              </div>
+              <div class="col-lg-6 col-5 my-auto text-end">
+                <button class="btn btn-sm btn-outline-primary mb-0" id="refreshMap">
+                  <i class="fas fa-sync-alt me-1"></i>تحديث
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="map-container">
+              <div id="map" style="height: 400px;"></div>
+            </div>
+            
+            <!-- Reports List -->
+            <div class="mt-4">
+              <h6 class="mb-3">البلاغات النشطة</h6>
+              <div class="table-responsive">
+                <table class="table align-items-center mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">البلاغ</th>
+                      <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">التفاصيل</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">الحالة</th>
+                      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">التوقيت</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for r in map_reports %}
+                    <tr class="report-item">
+                      <td>
+                        <div class="d-flex px-2 py-1">
+                          <div>
+                            <div class="icon icon-shape icon-sm shadow border-radius-md bg-gradient-dark text-center me-3 d-flex align-items-center justify-content-center">
+                              <span class="text-white opacity-10 text-xs">#{{ r.id }}</span>
+                            </div>
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h6 class="mb-0 text-sm">بلاغ #{{ r.id }}</h6>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p class="text-xs text-secondary mb-0">{{ r.details|truncatechars:50 }}</p>
+                      </td>
+                      <td class="align-middle text-center text-sm">
+                        <span class="badge badge-sm bg-gradient-warning">قيد التنفيذ</span>
+                      </td>
+                      <td class="align-middle text-center">
+                        <div class="d-flex align-items-center justify-content-center">
+                          <i class="fas fa-clock me-1 text-xs text-secondary"></i>
+                          <span class="text-xs text-secondary">{{ r.created_at|date:"Y-m-d H:i" }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="4" class="text-center py-4">
+                        <div class="text-center">
+                          <i class="fas fa-clipboard-list text-secondary opacity-5" style="font-size: 3rem;"></i>
+                          <p class="text-secondary mt-2 mb-0">لا توجد بلاغات نشطة حالياً</p>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+      <div class="col-12">
+        <div class="quick-actions">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <h5 class="text-white mb-2">إجراءات سريعة</h5>
+              <p class="text-white opacity-8 mb-0">الوصول السريع للوظائف الأساسية</p>
+            </div>
+            <div class="col-lg-4 text-lg-end text-center mt-lg-0 mt-3">
+              <div class="d-flex gap-2 justify-content-lg-end justify-content-center flex-wrap">
+                <a href="{% url 'center_reports' %}" class="btn btn-round mb-0">
+                  <i class="fas fa-list-alt me-1"></i>
+                  عرض البلاغات
+                </a>
+               
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notifications Modal -->
+<div class="modal fade" id="notificationsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">الإشعارات الجديدة</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="list-group list-group-flush">
+          <div class="list-group-item border-0 d-flex align-items-center px-0 mb-2">
+            <div class="avatar me-3">
+              <div class="icon icon-shape bg-gradient-danger shadow text-center">
+                <i class="fas fa-exclamation-triangle opacity-10"></i>
+              </div>
+            </div>
+            <div class="d-flex align-items-start flex-column justify-content-center">
+              <h6 class="mb-0 text-sm">بلاغ طارئ جديد</h6>
+              <p class="mb-0 text-xs">منذ 5 دقائق</p>
+            </div>
+          </div>
+          <div class="list-group-item border-0 d-flex align-items-center px-0 mb-2">
+            <div class="avatar me-3">
+              <div class="icon icon-shape bg-gradient-success shadow text-center">
+                <i class="fas fa-check opacity-10"></i>
+              </div>
+            </div>
+            <div class="d-flex align-items-start flex-column justify-content-center">
+              <h6 class="mb-0 text-sm">تم حل بلاغ #003</h6>
+              <p class="mb-0 text-xs">منذ 15 دقيقة</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+        <button type="button" class="btn btn-primary">عرض الكل</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Chart Implementation
+    const ctx = document.getElementById('reportChart');
+    if (ctx) {
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: {{ hours|safe|default:"['00', '06', '12', '18', '24']" }},
+          datasets: [{
+            label: 'عدد البلاغات',
+            data: {{ counts|safe|default:"[2, 8, 15, 12, 6]" }},
+            borderColor: '#5e72e4',
+            backgroundColor: 'rgba(94, 114, 228, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#5e72e4',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'الساعة',
+                font: {
+                  family: 'Changa'
+                }
+              },
+              grid: {
+                display: false
+              }
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'عدد البلاغات',
+                font: {
+                  family: 'Changa'
+                }
+              },
+              grid: {
+                color: 'rgba(0,0,0,0.05)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Map Implementation
+    const mapElement = document.getElementById('map');
+    if (mapElement) {
+      const map = L.map('map').setView([27.0, 14.0], 6);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const markers = [
+        {% for r in map_reports %}
+        {
+          lat: {{ r.lat|default:27.0 }},
+          lng: {{ r.lng|default:14.0 }},
+          id: {{ r.id }},
+          details: `{{ r.details|escapejs|truncatechars:40 }}`
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ];
+
+      markers.forEach(m => {
+        const marker = L.marker([m.lat, m.lng]).addTo(map);
+        marker.bindPopup(`
+          <div class="text-center p-2">
+            <h6 class="mb-1">بلاغ رقم #${m.id}</h6>
+            <p class="mb-0 small">${m.details}</p>
+          </div>
+        `);
+      });
+
+      if (markers.length > 0) {
+        const bounds = markers.map(m => [m.lat, m.lng]);
+        map.fitBounds(bounds, { padding: [20, 20] });
+      }
+
+      // Refresh Map Button
+      document.getElementById('refreshMap')?.addEventListener('click', function() {
+        map.invalidateSize();
+        this.innerHTML = '<i class="fas fa-spin fa-spinner me-1"></i>جاري التحديث...';
+        setTimeout(() => {
+          this.innerHTML = '<i class="fas fa-sync-alt me-1"></i>تحديث';
+        }, 1000);
+      });
+    }
+  });
+</script>
+{% endblock %}

@@ -5,80 +5,189 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card">
-        <div class="card-header bg-primary text-white text-center">
-          <h5 class="mb-0">{{ title }}</h5>
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-gradient bg-primary text-white text-center p-3">
+          <h4 class="mb-0 fw-bold">{{ title }}</h4>
         </div>
-        <div class="card-body">
-          <form method="post">
+        <div class="card-body p-4">
+          <form method="post" class="needs-validation" novalidate>
             {% csrf_token %}
-
-            <!-- اسم المستخدم -->
-            <div class="mb-3">
-              <label for="id_username" class="form-label">اسم المستخدم</label>
-              {{ form.username|add_class:"form-control" }}
-              {% if form.username.errors %}
-                <div class="text-danger">{{ form.username.errors.0 }}</div>
-              {% endif %}
-            </div>
-
-            <!-- البريد الإلكتروني -->
-            <div class="mb-3">
-              <label for="id_email" class="form-label">البريد الإلكتروني</label>
-              {{ form.email|add_class:"form-control" }}
-              {% if form.email.errors %}
-                <div class="text-danger">{{ form.email.errors.0 }}</div>
-              {% endif %}
-            </div>
-
-            <!-- النوع -->
-            <div class="mb-3">
-              <label for="id_type" class="form-label">النوع</label>
-              {{ form.type|add_class:"form-select" }}
-              {% if form.type.errors %}
-                <div class="text-danger">{{ form.type.errors.0 }}</div>
-              {% endif %}
-            </div>
-            <!-- كلمة المرور -->
-            <div class="mb-3">
-                <label for="id_password" class="form-label">كلمة المرور</label>
-                {{ form.password|add_class:"form-control" }}
-                {% if form.password.errors %}
-                <div class="text-danger">{{ form.password.errors.0 }}</div>
+            
+            <div class="row">
+              <!-- اسم المستخدم -->
+              <div class="col-md-6 mb-3">
+                <label for="id_username" class="form-label fw-bold">
+                  <i class="bi bi-person-fill me-1"></i>اسم المستخدم
+                </label>
+                {{ form.username|add_class:"form-control form-control-lg rounded-pill" }}
+                {% if form.username.errors %}
+                  <div class="text-danger mt-1 small">{{ form.username.errors.0 }}</div>
                 {% endif %}
+              </div>
+
+              <!-- البريد الإلكتروني -->
+              <div class="col-md-6 mb-3">
+                <label for="id_email" class="form-label fw-bold">
+                  <i class="bi bi-envelope-fill me-1"></i>البريد الإلكتروني
+                </label>
+                {{ form.email|add_class:"form-control form-control-lg rounded-pill" }}
+                {% if form.email.errors %}
+                  <div class="text-danger mt-1 small">{{ form.email.errors.0 }}</div>
+                {% endif %}
+              </div>
             </div>
             
-            <!-- تأكيد كلمة المرور -->
-            <div class="mb-3">
-                <label for="id_confirm_password" class="form-label">تأكيد كلمة المرور</label>
-                {{ form.confirm_password|add_class:"form-control" }}
-                {% if form.confirm_password.errors %}
-                <div class="text-danger">{{ form.confirm_password.errors.0 }}</div>
+            <div class="row">
+              <!-- النوع -->
+              <div class="col-md-6 mb-3">
+                <label for="id_type" class="form-label fw-bold">
+                  <i class="bi bi-building me-1"></i>النوع
+                </label>
+                {{ form.type|add_class:"form-select form-select-lg rounded-pill" }}
+                {% if form.type.errors %}
+                  <div class="text-danger mt-1 small">{{ form.type.errors.0 }}</div>
                 {% endif %}
-            </div>
-            <!-- مفعل -->
-            <div class="form-check form-switch mb-3">
-              {{ form.is_active }}
-              <label class="form-check-label" for="id_is_active">مفعل</label>
+              </div>
+
+              <!-- الاسم الكامل (إذا كان متوفراً) -->
+              <div class="col-md-6 mb-3">
+                <label for="id_user_type" class="form-label fw-bold">
+                  <i class="bi bi-person-badge me-1"></i>نوع الحساب
+                </label>
+                {{ form.user_type|add_class:"form-select form-select-lg rounded-pill" }}
+                {% if form.user_type.errors %}
+                  <div class="text-danger mt-1 small">{{ form.user_type.errors.0 }}</div>
+                {% endif %}
+              </div>
             </div>
 
-            <!-- سوبر يوزر -->
-            <div class="form-check form-switch mb-4">
-              {{ form.is_superuser }}
-              <label class="form-check-label" for="id_is_superuser">صلاحية المدير</label>
+            <div class="row">
+              <!-- كلمة المرور -->
+              <div class="col-md-6 mb-3">
+                <label for="id_password" class="form-label fw-bold">
+                  <i class="bi bi-key-fill me-1"></i>كلمة المرور
+                </label>
+                <div class="input-group">
+                  {{ form.password|add_class:"form-control form-control-lg rounded-end" }}
+                  <button class="btn btn-outline-secondary rounded-start" type="button" onclick="togglePassword('id_password')">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                </div>
+                {% if form.password.errors %}
+                  <div class="text-danger mt-1 small">{{ form.password.errors.0 }}</div>
+                {% endif %}
+              </div>
+              
+              <!-- تأكيد كلمة المرور -->
+              <div class="col-md-6 mb-3">
+                <label for="id_confirm_password" class="form-label fw-bold">
+                  <i class="bi bi-key-fill me-1"></i>تأكيد كلمة المرور
+                </label>
+                <div class="input-group">
+                  {{ form.confirm_password|add_class:"form-control form-control-lg rounded-end" }}
+                  <button class="btn btn-outline-secondary rounded-start" type="button" onclick="togglePassword('id_confirm_password')">
+                    <i class="bi bi-eye-fill"></i>
+                  </button>
+                </div>
+                {% if form.confirm_password.errors %}
+                  <div class="text-danger mt-1 small">{{ form.confirm_password.errors.0 }}</div>
+                {% endif %}
+              </div>
             </div>
 
-            <div class="text-center">
-              <button type="submit" class="btn btn-success">حفظ</button>
-              <a href="{% url 'user_list' %}" class="btn btn-secondary">إلغاء</a>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <!-- مفعل -->
+                <div class="form-check form-switch mb-3">
+                  {{ form.is_active|add_class:"form-check-input" }}
+                  <label class="form-check-label fw-bold" for="id_is_active">
+                    <i class="bi bi-toggle-on me-1"></i>الحساب مفعل
+                  </label>
+                </div>
+              </div>
+              
+              <div class="col-md-6">
+                <!-- سوبر يوزر -->
+                <div class="form-check form-switch mb-3">
+                  {{ form.is_superuser|add_class:"form-check-input" }}
+                  <label class="form-check-label fw-bold" for="id_is_superuser">
+                    
+                    <i class="bi bi-shield-lock-fill me-1"></i>صلاحية المدير
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-grid gap-2 d-md-flex justify-content-center mt-4">
+              <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill">
+                <i class="bi bi-check-circle-fill me-2"></i>حفظ
+              </button>
+              <a href="{% url 'user_list' %}" class="btn btn-outline-secondary btn-lg px-5 rounded-pill">
+                <i class="bi bi-x-circle-fill me-2"></i>إلغاء
+              </a>
             </div>
           </form>
         </div>
       </div>
+      
+      <!-- إرشادات المستخدم (اختياري) -->
+      {% comment %} <div class="card mt-3 border-0 bg-light rounded-3">
+        <div class="card-body p-3">
+          <p class="mb-0 small text-muted">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            ملاحظة: جميع الحقول إلزامية باستثناء كلمة المرور، وتستطيع تركها فارغة في حالة عدم الحاجة لتغييرها.
+          </p>
+        </div>
+      </div> {% endcomment %}
     </div>
   </div>
 </div>
+
+<script>
+  // وظيفة لإظهار/إخفاء كلمة المرور
+  function togglePassword(inputId) {
+    const passwordInput = document.getElementById(inputId);
+    const icon = event.currentTarget.querySelector('i');
+    
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      icon.classList.replace('bi-eye-fill', 'bi-eye-slash-fill');
+    } else {
+      passwordInput.type = "password";
+      icon.classList.replace('bi-eye-slash-fill', 'bi-eye-fill');
+    }
+  }
+document.addEventListener('DOMContentLoaded', function () {
+  var valuesToHide = ['emergency_center', 'user'];
+
+  valuesToHide.forEach(function(value) {
+    var options = document.querySelectorAll('option[value="' + value + '"]');
+    options.forEach(function(option) {
+      option.style.display = 'none';
+    });
+  });
+});
+
+  (function() {
+    'use strict';
+
+
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+</script>
 {% endblock %}

@@ -8,12 +8,37 @@ class CustomUser(AbstractUser):
         ("traffic", "المرور"),     # بلاغ مروري
         ("help", "النجدة"),           # طلب مساعدة
         ("ambulance", "الاسعاف"),
-         ('fire','المطافئ') # طلب إسعاف
+         ('fire','المطافئ'),
+          ('user','مستخدم') # طلب إسعاف
     ]
+    USER_ROLE_CHOICES = [
+        ('admin', 'مدير نظام'),
+        ('emergency_admin', 'مشرف طوارئ'),  # مثل مدير مرور - إسعاف
+        ('emergency_center', 'مركز طوارئ'),  # نقطة تابعة للمشرف
+        ('user', 'مستخدم عادي'),
+    ]
+    user_type =models.CharField(choices=USER_ROLE_CHOICES, max_length=50,null=True,blank=True)
     type = models.CharField(choices=REPORT_TYPE_CHOICES,max_length=50)
     def __str__(self):
         return self.email
     
+
+class EmergencyCenter(models.Model):
+    name = models.CharField(max_length=255, verbose_name="اسم المركز")
+    type = models.CharField(choices=[
+        ("traffic", "المرور"),     # بلاغ مروري
+        ("help", "النجدة"),           # طلب مساعدة
+        ("ambulance", "الاسعاف"),
+         ('fire','المطافئ')], max_length=20,null=True,blank=True, verbose_name="نوع المركز")
+    location_lat = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="خط العرض")
+    location_lng = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="خط الطول")
+    admin = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='centers_managed')
+  
+    user_account = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='emergency_center_account')
+
+    def __str__(self):
+        return f"{self.name} - {self.get_type_display()}"
+
 class Report(models.Model):
     # تعريف أنواع البلاغات كخيارات ثابتة
     REPORT_TYPE_CHOICES = [
@@ -26,7 +51,8 @@ class Report(models.Model):
     REPORT_STATUS_CHOICES = [
         (0, "New"),          # جديد
         (1, "In Progress"),  # قيد التنفيذ
-        (2, "Resolved"),     # تم الحل
+        (2, "Resolved"),
+        (3, 'Cancel')     # تم الحل
     ]
 
     type = models.CharField(
@@ -42,8 +68,16 @@ class Report(models.Model):
         default=0,
         verbose_name="حالة البلاغ"
     )
+    assigned_center = models.ForeignKey(
+        'EmergencyCenter',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="مركز الطوارئ المخصص"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="تاريخ الإنشاء")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="آخر تحديث")
+    created_by = models.ForeignKey(CustomUser,blank=True,null=True,on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.get_type_display()} - {self.get_status_display()}"

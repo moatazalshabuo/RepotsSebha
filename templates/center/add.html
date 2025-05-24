@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block titlePage %}إنشاء مركز طوارئ جديد{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-gradient bg-primary text-white text-center p-3">
+          {% if edit_mode %}
+            <h4 class="mb-0 fw-bold">
+                <i class="bi bi-pencil-square me-2"></i>تعديل مركز طوارئ
+            </h4>
+        {% else %}
+        <h4 class="mb-0 fw-bold">
+            <i class="bi bi-building-fill-add me-2"></i>إنشاء مركز طوارئ جديد
+        </h4>
+        {% endif %}
+        </div>
+        <div class="card-body p-4">
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+            
+            <!-- قسم بيانات الحساب -->
+            <div class="row mb-4">
+              <div class="col-12">
+                
+                <div class="bg-light p-3 rounded-3 mb-3">
+                  <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-person-fill-gear me-2 text-primary"></i>بيانات الحساب
+                  </h5>
+                  
+                  <div class="row g-3">
+                    <!-- اسم المستخدم -->
+                    <div class="col-md-6 mb-3">
+                      <label for="id_username" class="form-label fw-bold">
+                        <i class="bi bi-person-fill me-1"></i>اسم المستخدم
+                      </label>
+                      <input type="text" name="username" id="id_username" class="form-control form-control-lg rounded-pill" placeholder="أدخل اسم المستخدم" value="{{ user_form.username.value|default_if_none:'' }}" required>
+                      {% if user_form.username.errors %}
+                        <div class="text-danger mt-1 small">{{ user_form.username.errors.0 }}</div>
+                      {% endif %}
+                    </div>
+
+                    <!-- البريد الإلكتروني -->
+                    <div class="col-md-6 mb-3">
+                      <label for="id_email" class="form-label fw-bold">
+                        <i class="bi bi-envelope-fill me-1"></i>البريد الإلكتروني
+                      </label>
+                      <input type="email" name="email" id="id_email" class="form-control form-control-lg rounded-pill" placeholder="example@domain.com" value="{{ user_form.email.value|default_if_none:'' }}" required>
+                      {% if user_form.email.errors %}
+                        <div class="text-danger mt-1 small">{{ user_form.email.errors.0 }}</div>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- كلمة المرور -->
+                    <div class="col-md-6 mb-3">
+                      <label for="id_password" class="form-label fw-bold">
+                        <i class="bi bi-key-fill me-1"></i>كلمة المرور
+                      </label>
+                      <div class="input-group">
+                        <input type="password" name="password" id="id_password" class="form-control form-control-lg rounded-end" placeholder="أدخل كلمة المرور" required>
+                        <button class="btn btn-outline-secondary rounded-start" type="button" onclick="togglePassword('id_password')">
+                          <i class="bi bi-eye-fill"></i>
+                        </button>
+                      </div>
+                      {% if user_form.password.errors %}
+                        <div class="text-danger mt-1 small">{{ user_form.password.errors.0 }}</div>
+                      {% endif %}
+                    </div>
+                    <input type='hidden' name='type' value='{{ request.user.type }}'>
+                    <!-- تأكيد كلمة المرور -->
+                    <div class="col-md-6 mb-3">
+                      <label for="id_confirm_password" class="form-label fw-bold">
+                        <i class="bi bi-key-fill me-1"></i>تأكيد كلمة المرور
+                      </label>
+                      <div class="input-group">
+                        <input type="password" name="confirm_password" id="id_confirm_password" class="form-control form-control-lg rounded-end" placeholder="أعد إدخال كلمة المرور" required>
+                        <button class="btn btn-outline-secondary rounded-start" type="button" onclick="togglePassword('id_confirm_password')">
+                          <i class="bi bi-eye-fill"></i>
+                        </button>
+                      </div>
+                      {% if user_form.confirm_password.errors %}
+                        <div class="text-danger mt-1 small">{{ user_form.confirm_password.errors.0 }}</div>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- حالة الحساب -->
+                    <div class="col-md-6">
+                      <div class="form-check form-switch mb-3">
+                        <input type="checkbox" name="is_active" id="id_is_active" class="form-check-input" checked>
+                        <label class="form-check-label fw-bold" for="id_is_active">
+                          <i class="bi bi-toggle-on me-1"></i>الحساب مفعل
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- قسم بيانات المركز -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="bg-light p-3 rounded-3">
+                  <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-building me-2 text-primary"></i>بيانات المركز
+                  </h5>
+                  
+                  <div class="row g-3">
+                    <!-- اسم المركز -->
+                    <div class="col-md-6 mb-3">
+                      <label for="id_name" class="form-label fw-bold">
+                        <i class="bi bi-building-fill me-1"></i>اسم المركز
+                      </label>
+                      <input type="text" name="name" id="id_name" class="form-control form-control-lg rounded-pill" placeholder="أدخل اسم المركز" value="{{ center_form.name.value|default_if_none:'' }}" required>
+                      {% if center_form.name.errors %}
+                        <div class="text-danger mt-1 small">{{ center_form.name.errors.0 }}</div>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- رقم الهاتف -->
+                    <div class="col-md-6 mb-3">
+                    
+                    </div>
+                    
+                    
+                    
+                    <!-- خط الطول -->
+                    <div class="col-md-6 mb-3">
+                      <label for="id_longitude" class="form-label fw-bold">
+                        <i class="bi bi-globe me-1"></i>خط الطول
+                      </label>
+                      <div class="input-group">
+                        <input type="number" name="location_lng" id="id_longitude" class="form-control form-control-lg rounded-pill" placeholder="خط الطول" step="0.000001" value="{{ center_form.location_lng.value|default_if_none:'' }}">
+                        <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#mapModal">
+                          <i class="bi bi-map"></i> تحديد الموقع على الخريطة
+                        </button>
+                      </div>
+                      {% if center_form.longitude.errors %}
+                        <div class="text-danger mt-1 small">{{ center_form.longitude.errors.0 }}</div>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- خط العرض -->
+                    <div class="col-md-6 mb-3">
+                      <label for="id_latitude" class="form-label fw-bold">
+                        <i class="bi bi-globe me-1"></i>خط العرض
+                      </label>
+                      <input type="number" name="location_lat" id="id_latitude" class="form-control form-control-lg rounded-pill" placeholder="خط العرض" step="0.000001" value="{{ center_form.location_lat.value|default_if_none:'' }}">
+                      {% if center_form.latitude.errors %}
+                        <div class="text-danger mt-1 small">{{ center_form.latitude.errors.0 }}</div>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- المعلومات الإضافية -->
+                   
+                    
+                    <!-- الحالة النشطة -->
+                    <div class="col-md-6">
+                      <div class="form-check form-switch mb-3">
+                        <input type="checkbox" name="is_active" id="id_center_is_active" class="form-check-input" {% if center_form.is_active.value %}checked{% endif %}>
+                        <label class="form-check-label fw-bold" for="id_center_is_active">
+                          <i class="bi bi-toggles me-1"></i>المركز مفعل
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-center mt-4">
+              {% if edit_mode %}
+                <button type="submit" class="btn btn-primary btn-lg px-5 rounded-pill">
+                    <i class="bi bi-save-fill me-2"></i>تحديث المركز
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-2"></i>إنشاء المركز
+                </button>
+                {% endif %}
+              <a href="{% url 'center_list' %}" class="btn btn-outline-secondary btn-lg px-5 rounded-pill">
+                <i class="bi bi-x-circle-fill me-2"></i>إلغاء
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- إرشادات المستخدم -->
+      <div class="card mt-3 border-0 bg-light rounded-3">
+        <div class="card-body p-3">
+          <p class="mb-0 small text-muted">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            ملاحظة: سيتم إنشاء حساب مستخدم للمركز وربطه بمركز الطوارئ تلقائياً.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- الخريطة لتحديد الموقع -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تحديد موقع المركز</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <div id="map" style="height: 400px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+        <button type="button" class="btn btn-primary" id="saveLocation">حفظ الموقع</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // وظيفة لإظهار/إخفاء كلمة المرور
+  function togglePassword(inputId) {
+    const passwordInput = document.getElementById(inputId);
+    const icon = event.currentTarget.querySelector('i');
+    
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      icon.classList.replace('bi-eye-fill', 'bi-eye-slash-fill');
+    } else {
+      passwordInput.type = "password";
+      icon.classList.replace('bi-eye-slash-fill', 'bi-eye-fill');
+    }
+  }
+  
+  // التحقق من صحة النموذج
+  (function() {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    
+    Array.from(forms).forEach(form => {
+      form.addEventListener('submit', event => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  })();
+  
+  // إضافة تفاعلية للخريطة
+  {% comment %} document.addEventListener('DOMContentLoaded', function() {
+    const mapElement = document.getElementById('map');
+    const latitudeInput = document.getElementById('id_latitude');
+    const longitudeInput = document.getElementById('id_longitude');
+    const saveLocationButton = document.getElementById('saveLocation');
+    
+    // هذا الكود سيعمل عند توفر خريطة Google Maps أو Open Street Map
+    // يمكن تخصيصه حسب مكتبة الخرائط المستخدمة
+    if (typeof google !== 'undefined' && google.maps && mapElement) {
+      let map, marker;
+      
+      // تهيئة الخريطة
+      function initMap() {
+        // إعداد موقع افتراضي (الرياض)
+        const defaultLocation = { lat: 24.7136, lng: 46.6753 };
+        const initialLat = latitudeInput.value ? parseFloat(latitudeInput.value) : defaultLocation.lat;
+        const initialLng = longitudeInput.value ? parseFloat(longitudeInput.value) : defaultLocation.lng;
+        
+        // إنشاء الخريطة
+        map = new google.maps.Map(mapElement, {
+          center: { lat: initialLat, lng: initialLng },
+          zoom: 12,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+        
+        // إضافة علامة
+        marker = new google.maps.Marker({
+          position: { lat: initialLat, lng: initialLng },
+          map: map,
+          draggable: true
+        });
+        
+        // تحديث الإحداثيات عند سحب العلامة
+        google.maps.event.addListener(marker, 'dragend', function() {
+          const position = marker.getPosition();
+          document.getElementById('map-lat').value = position.lat();
+          document.getElementById('map-lng').value = position.lng();
+        });
+        
+        // تحديث العلامة عند النقر على الخريطة
+        google.maps.event.addListener(map, 'click', function(event) {
+          marker.setPosition(event.latLng);
+          document.getElementById('map-lat').value = event.latLng.lat();
+          document.getElementById('map-lng').value = event.latLng.lng();
+        });
+      }
+      
+      // عند فتح مربع الحوار
+      $('#mapModal').on('shown.bs.modal', function() {
+        initMap();
+      });
+      
+      // عند الضغط على زر الحفظ
+      saveLocationButton.addEventListener('click', function() {
+        latitudeInput.value = document.getElementById('map-lat').value;
+        longitudeInput.value = document.getElementById('map-lng').value;
+        $('#mapModal').modal('hide');
+      });
+    }
+  }); {% endcomment %}
+</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const mapModal = document.getElementById('mapModal');
+    const latitudeInput = document.getElementById('id_latitude');
+    const longitudeInput = document.getElementById('id_longitude');
+    const saveLocationBtn = document.getElementById('saveLocation');
+
+    let map, marker;
+
+    mapModal.addEventListener('shown.bs.modal', function () {
+      // إذا تم فتح الخريطة أكثر من مرة، امسح الخريطة السابقة
+      if (map) {
+        map.remove();
+      }
+
+      const initialLat = parseFloat(latitudeInput.value) || 27.0377; // طرابلس كإحداثيات افتراضية
+      const initialLng = parseFloat(longitudeInput.value) || 14.4283;
+
+      map = L.map('map').setView([initialLat, initialLng], 15);
+
+      // مصدر الخريطة من OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+
+      // إضافة marker
+      marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+
+      // عند سحب العلامة
+      marker.on('dragend', function (e) {
+        const { lat, lng } = e.target.getLatLng();
+        latitudeInput.value = lat.toFixed(6);
+        longitudeInput.value = lng.toFixed(6);
+      });
+
+      // عند النقر على الخريطة
+      map.on('click', function (e) {
+        const { lat, lng } = e.latlng;
+        marker.setLatLng([lat, lng]);
+        latitudeInput.value = lat.toFixed(6);
+        longitudeInput.value = lng.toFixed(6);
+      });
+    });
+
+    saveLocationBtn.addEventListener('click', function () {
+      const modal = bootstrap.Modal.getInstance(mapModal);
+      modal.hide(); // إغلاق المودال بعد حفظ الإحداثيات
+    });
+  });
+</script>
+
+
+{% endblock %}
